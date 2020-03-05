@@ -1,6 +1,28 @@
 #include <bits/stdc++.h>
 
+struct Day;
+struct qwq;
+struct CurrentDay;
+void createNewDay();
+void printToday();
+void getIdOfDay();
+void Save();
+void Load();
+void Menu();
+void listAllTask();
+void listAllUndoneTask();
+void listTodayTask(int t = 1);
+void addTodayTask();
+void addTomorrowTask();
+void addTaskOfCertainDay();
+void addTask();
+void listSave();
+void listTask();
+void finishTask();
+void unDoneTaskAdd();
+std::vector<Day> allDay;
 int totDay;
+
 struct qwq {
     int year, month, day;
     qwq(){}
@@ -28,7 +50,7 @@ struct Day {
         std::string name;
         int type;
         int id;
-        bool complete;
+        int complete;
         Task():type(0), complete(0){
         }
         void printTask();
@@ -42,28 +64,11 @@ struct Day {
     void listUndoneTask();
     void printDay();
 };
-std::vector<Day> allDay;
-void createNewDay();
-void printToday();
-void getIdOfDay();
-void Save();
-void Load();
-void Menu();
-void listAllTask();
-void listAllUndoneTask();
-void listTodayTask();
-void addTodayTask();
-void addTomorrowTask();
-void addTaskOfCertainDay();
-void addTask();
-void listSave();
-void listTask();
-void finishTask();
-
+std::vector<Day::Task>unDone;
 
 inline bool cmpDay (const Day& a, const Day& b) {
     return a.year < b.year || (a.year == b.year && a.month < b.month) || (a.year == b.year && a.month
-    == b.month && a.day < b.day);
+                                                                                              == b.month && a.day < b.day);
 }
 
 inline bool cmp(const Day::Task &a, const Day::Task &b) {
@@ -95,14 +100,10 @@ inline void Day::listSave() {
 
 inline void Day::listTask() {
     std::cout << this->list.size() << '\n';
- //   std::sort(this->list.begin(), this->list.end(), cmp);
+    //   std::sort(this->list.begin(), this->list.end(), cmp);
     for(std::vector<Task>::iterator iter = this->list.begin(); iter != this->list.end(); ++iter) {
         (iter)->printTask();
     }
-    std::string c;
-
-    puts("input anything to continue;");
-    std::cin >> c;
 }
 inline void Day::listUndoneTask() {
     std::sort(this->list.begin(), this->list.end(), cmp);
@@ -110,10 +111,7 @@ inline void Day::listUndoneTask() {
         if(iter->complete == 0)
             (iter)->printTask();
     }
-    std::string c;
 
-    puts("input anything to continue;");
-    std::cin >> c;
 
 }
 
@@ -131,6 +129,8 @@ inline void Day::addTask() {
 
 }
 
+
+
 inline int getIdofDay(int year, int month, int day) {
     return idOfDay[qwq(year, month, day)];
 }
@@ -140,6 +140,11 @@ inline void listAllTask() {
         iter->printDay();
         iter->listTask();
     }
+    std::string c;
+    puts("---------------------------------------------") ;
+
+    puts("input anything to continue;");
+    std::cin >> c;
 }
 
 
@@ -148,9 +153,15 @@ inline void listAllUndoneTask() {
         iter->printDay();
         iter->listUndoneTask();
     }
+
+    std::string c;
+    puts("---------------------------------------------") ;
+
+    puts("input anything to continue;");
+    std::cin >> c;
 }
 
-inline void listTodayTask() {
+void listTodayTask(int t) {
     int id = getIdofDay(Today.year, Today.month, Today.day);
     if(!id) {
         puts("There is no task");
@@ -159,6 +170,12 @@ inline void listTodayTask() {
     printf("allDay.size() = %d\n", allDay.size());
     allDay[id].listTask();
     end:puts("---------------------------------------------") ;
+    if(t) {
+         std::string c;
+
+         puts("input anything to continue;");
+         std::cin >> c;
+    }
     return;
 }
 
@@ -176,8 +193,9 @@ inline void addTaskOfCertainDay(int year, int month, int day) {
     int id = getIdofDay(year, month, day);
     if(!id) {
         createNewDay(year, month, day);
+        id = getIdofDay(year, month, day);
     }
-    Day *now = &allDay.back();
+    Day *now = &allDay[id];
     printf("the day you are adding task is ");
     now->printDay();
     char x;
@@ -227,11 +245,15 @@ inline void listTask() {
     }
     allDay[id].listTask();
     end:puts("---------------------------------------------") ;
+    std::string c;
+
+    puts("input anything to continue;");
+    std::cin >> c;
     return;
 }
 
 inline void finishTask() {
-    listTodayTask();
+    listTodayTask(0);
     Day *now = &allDay[getIdofDay(Today.year, Today.month, Today.day)];
     while(true){
         puts("input which task have you finished? (input its id)");
@@ -278,10 +300,11 @@ inline void Menu() {
             case 'r':finishTask();break;
             case '1':listTodayTask(); break;
             case '2':addTodayTask();break;
-           // case 3:addTomorrowTask();break;
+                // case 3:addTomorrowTask();break;
             case '4':addTask(); break;
             case '5':listTask();break;
             case '6':listAllTask(); break;
+            case '7':listAllUndoneTask();break;
             case '8':goto end; break;
             default: puts("在做了 在做了");break;
         }
@@ -317,20 +340,48 @@ inline void Load() {
         Day x;
         int n;
         infile>>x.year >> x.month >> x.day >> x.id >> x.tot;
-
+        bool today = x.year == Today.year && x.month == Today.month && x.day == Today.day;
         idOfDay[qwq(x.year, x.month, x.day)] = x.id;
         for(int j = 1; j <= x.tot; ++j) {
             Day::Task y;
             infile>>y.id>>y.name>>y.type>>y.complete;
+            if(!y.complete && !today) {
+                unDone.push_back(y);
+                y.complete = 2;
+            }
             x.list.push_back(y);
+
         }
         allDay.push_back(x);
     }
     end:puts("Loading Completed");
 }
 
+inline void unDoneTaskAdd() {
+    int year = Today.year, month = Today.month, day = Today.day;
+    int id = getIdofDay(year, month, day);
+    if(!id) {
+        createNewDay(year, month, day);
+        id = getIdofDay(year, month, day);
+    }
+    Day *now = &allDay[id];
+    puts("undone Task are listed and added to today task list");
+    for(auto i = unDone.begin(); i != unDone.end(); ++i) {
+        now->list.push_back(*i);
+
+    }
+    std::sort(now->list.begin(), now->list.end(), cmp);
+    now->tot = 0;
+    for(auto i = now->list.begin(); i != now->list.end(); ++i) {
+        i->id = ++(now->tot);
+        i->printTask();
+    }
+
+}
+
 inline void run() {
     Load();
+    unDoneTaskAdd();
     Menu();
     Save();
 }
